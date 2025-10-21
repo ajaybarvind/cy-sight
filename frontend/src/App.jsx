@@ -1,12 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // NEW: useEffect added
 import axios from 'axios';
-import './App.css'; // We will create this file next
+import './App.css';
 
 function App() {
-  const [ip, setIp] = useState(''); // State to hold the IP address from the input box
-  const [report, setReport] = useState(null); // State to hold the result from our API
-  const [isLoading, setIsLoading] = useState(false); // State to show a loading message
-  const [error, setError] = useState(null); // State to show any errors
+  const [ip, setIp] = useState('');
+  const [report, setReport] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]); // NEW: State to hold the report history
+
+  // NEW: Function to fetch the history from our backend
+  const fetchHistory = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/reports');
+      setHistory(response.data);
+    } catch (err) {
+      console.error("Could not fetch history", err);
+    }
+  };
+
+  // NEW: useEffect hook to run fetchHistory() when the component first loads
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const handleCheckIp = async () => {
     if (!ip) {
@@ -18,9 +34,9 @@ function App() {
     setReport(null);
 
     try {
-      // This is the magic! We are calling our own backend server.
       const response = await axios.get(`http://localhost:3000/check-ip/${ip}`);
       setReport(response.data);
+      fetchHistory(); // NEW: Refresh the history list after a new check
     } catch (err) {
       setError('Failed to fetch data. Is the backend server running?');
       console.error(err);
@@ -67,6 +83,21 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* NEW: Section to display the history */}
+      <div className="history-section">
+        <h2>Recent Checks</h2>
+        <ul className="history-list">
+          {history.map((item) => (
+            <li key={item.id} className="history-item">
+              <span>{item.ip_address}</span>
+              <span className={item.abuse_score > 50 ? 'high-risk' : 'low-risk'}>
+                Score: {item.abuse_score}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
