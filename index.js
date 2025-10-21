@@ -1,44 +1,64 @@
-// Load our secret API key and import our tools
+// Load environment variables and import tools
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const { Pool } = require('pg'); // Import the pg Pool object
 
-// Initialize our express app (the server)
+// --- DATABASE CONFIGURATION ---
+const db = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
+
+// --- SERVER CONFIGURATION ---
 const app = express();
-const port = 3000; // The 'port' our server will listen on
+const port = 3000;
 
-// This is our main API endpoint. It will listen for requests at /check-ip/:ipAddress
+// --- API ENDPOINT ---
 app.get('/check-ip/:ipAddress', async (req, res) => {
-  // Get the IP address from the URL parameters
-  const ipAddress = req.params.ipAddress;
+  const { ipAddress } = req.params;
   const apiKey = process.env.ABUSEIPDB_API_KEY;
 
   console.log(`Received request to check IP: ${ipAddress}`);
 
   try {
+    // Step 1: Fetch data from AbuseIPDB API
     const apiResponse = await axios.get('https://api.abuseipdb.com/api/v2/check', {
-      params: {
-        ipAddress: ipAddress,
-        maxAgeInDays: 90
-      },
-      headers: {
-        'Key': apiKey,
-        'Accept': 'application/json'
-      }
+      params: { ipAddress: ipAddress, maxAgeInDays: 90 },
+      headers: { 'Key': apiKey, 'Accept': 'application/json' },
     });
 
-    // Send the data from AbuseIPDB back to the user's browser
-    res.json(apiResponse.data);
+    const reportData = apiResponse.data.data;
+
+    // Step 2: Save the relevant data to our PostgreSQL database
+    const queryText = `
+      INSERT INTO reports(ip_address, abuse_score, country_code, isp)
+      VALUES($1, $2, $3, $4)
+      RETURNING *;
+    `;
+    const queryValues = [
+      reportData.ipAddress,
+      reportData.abuseConfidenceScore,
+      reportData.countryCode,
+      reportData.isp
+    ];
+    
+    const dbResult = await db.query(queryText, queryValues);
+    console.log('Saved to database:', dbResult.rows[0]);
+
+    // Step 3: Send the original API data back to the browser
+    res.json(reportData);
 
   } catch (error) {
-    console.error('Error fetching data:', error.response.data);
-    // If something goes wrong, send an error message
-    res.status(500).json({ error: 'Failed to fetch data from AbuseIPDB' });
+    console.error('An error occurred:', error.message);
+    res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
 
-// This command starts our server and makes it listen for requests
+// --- START SERVER ---
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-  console.log('Ready to check IP addresses!');
 });
