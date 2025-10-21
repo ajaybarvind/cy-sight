@@ -1,0 +1,8 @@
+# Node dependencies (for both frontend and backend)
+node_modules/
+
+# Environment files (NEVER commit these)
+.env
+
+# macOS system files
+.DS_Store
