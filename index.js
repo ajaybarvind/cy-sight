@@ -72,6 +72,21 @@ app.get('/reports', async (req, res) => {
   }
 });
 
+// --- NEW: API ENDPOINT FOR GEOLOCATION ---
+app.get('/geolocate/:ipAddress', async (req, res) => {
+  const { ipAddress } = req.params;
+  console.log(`Received request to geolocate IP: ${ipAddress}`);
+
+  try {
+    // We call the external IP-API.com service
+    const geoResponse = await axios.get(`http://ip-api.com/json/${ipAddress}`);
+    res.json(geoResponse.data);
+  } catch (error) {
+    console.error('Error fetching geolocation data:', error.message);
+    res.status(500).json({ error: 'Failed to fetch geolocation data' });
+  }
+});
+
 // --- START SERVER ---
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
