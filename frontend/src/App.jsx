@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-// NEW: Define the base URL for our API.
-// It will use the variable from our .env file, or default to localhost if it's not found.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// UPDATED: This now relies solely on your .env.local file.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 function App() {
@@ -18,7 +17,7 @@ function App() {
 
   const fetchHistory = async () => {
     try {
-      // UPDATED: Uses the API_BASE_URL variable
+      // This will now use your live backend URL
       const response = await axios.get(`${API_BASE_URL}/reports`);
       setHistory(response.data);
     } catch (err) {
@@ -41,13 +40,13 @@ function App() {
     setDetails(null);
 
     try {
-      // UPDATED: Uses the API_BASE_URL variable
+      // This will now use your live backend URL
       const response = await axios.get(`${API_BASE_URL}/check-ip/${ip}`);
       setSelectedIp(response.data.ipAddress);
       setDetails({ report: response.data });
       fetchHistory();
     } catch (err) {
-      setError('Failed to fetch data. Is the backend server running?');
+      setError('Failed to fetch data. Check the browser console for more details.');
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +58,7 @@ function App() {
     setDetails(null);
 
     try {
-      // UPDATED: Both calls now use the API_BASE_URL variable
+      // This will now use your live backend URL
       const [reportRes, geoRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/check-ip/${ipAddress}`),
         axios.get(`${API_BASE_URL}/geolocate/${ipAddress}`)
