@@ -148,3 +148,20 @@ button:disabled {
   font-family: Menlo, Monaco, 'Courier New', monospace;
   font-size: 1.1rem;
 }
+
+/* New Styling for Clickable History and Loading Message */
+.history-item {
+  /* ... existing styles ... */
+  cursor: pointer; /* NEW */
+  transition: background-color 0.2s; /* NEW */
+}
+
+.history-item:hover {
+  background-color: #2c2c2e; /* NEW */
+}
+
+.loading-message {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  color: #888;
+}
